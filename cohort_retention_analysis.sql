@@ -1,22 +1,11 @@
--- ============================================================
---  CUSTOMER COHORT & RETENTION ANALYSIS
---  Dataset : UCI Online Retail II  (via Kaggle)
---  Author  : Odunayo Oyeboade
---  Tools   : MS SQL Server (T-SQL) — SQL Server 2016+
---
---  MySQL 8+ compatibility notes are marked inline with:
---  [MySQL] where syntax differs from T-SQL
---
---  Dataset link:
---  https://www.kaggle.com/datasets/mashlyn/online-retail-ii-uci
---
+
 --  Business Context:
 --  An online retail company wants to understand how well it
 --  retains customers over time, which acquisition cohorts
 --  perform best, and where churn is highest so marketing
 --  and CX teams can intervene early.
 --
---  ── SETUP: Create & load the table ───────────────────────
+-- SETUP: Create & load the table ───────────────────────
 --
 --  CREATE TABLE online_retail (
 --      invoice       VARCHAR(20),
@@ -29,17 +18,12 @@
 --      country       VARCHAR(100)
 --  );
 --
---  -- T-SQL bulk load (update path as needed):
+--  -- bulk load (update data location path as needed):
 --  BULK INSERT online_retail
 --  FROM 'C:\data\online_retail_II.csv'
 --  WITH (FORMAT = 'CSV', FIRSTROW = 2,
 --        FIELDTERMINATOR = ',', ROWTERMINATOR = '\n', TABLOCK);
 --
---  -- [MySQL] equivalent:
---  -- LOAD DATA INFILE '/data/online_retail_II.csv'
---  -- INTO TABLE online_retail
---  -- FIELDS TERMINATED BY ',' ENCLOSED BY '"'
---  -- LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 -- ============================================================
 
 
