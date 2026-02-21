@@ -5,7 +5,7 @@
 --  perform best, and where churn is highest so marketing
 --  and CX teams can intervene early.
 --
--- SETUP: Create & load the table ───────────────────────
+-- SETUP: Create & load the table 
 --
 --  CREATE TABLE online_retail (
 --      invoice       VARCHAR(20),
@@ -26,22 +26,11 @@
 --
 -- ============================================================
 
-
--- ============================================================
--- QUERY 1 — COHORT RETENTION RATE TABLE
+-- COHORT RETENTION RATE TABLE
 --
 --  Business Question:
 --  "What % of customers from each monthly cohort are still
 --   purchasing in months 1, 2, 3 … after acquisition?"
---
---  Output: feeds directly into a Tableau cohort heatmap.
---
---  Key T-SQL notes:
---  • DATEFROMPARTS(y, m, 1) truncates a date to its month —
---    equivalent to PostgreSQL DATE_TRUNC('month', d)
---    [MySQL]: DATE_FORMAT(invoice_date, '%Y-%m-01')
---  • Month arithmetic: YEAR()*12 + MONTH() gives an integer
---    offset that works cleanly across year boundaries
 -- ============================================================
 WITH clean_orders AS (
     SELECT
