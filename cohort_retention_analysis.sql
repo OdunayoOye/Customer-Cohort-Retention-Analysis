@@ -26,7 +26,7 @@
 --
 -- ============================================================
 
--- COHORT RETENTION RATE TABLE
+-- QUERY 2 - COHORT RETENTION RATE TABLE
 --
 --  Business Question:
 --  "What % of customers from each monthly cohort are still
@@ -38,8 +38,7 @@ WITH clean_orders AS (
         CAST(invoice_date AS DATE)                              AS order_date,
         YEAR(invoice_date)                                      AS order_year,
         MONTH(invoice_date)                                     AS order_month_num,
-        DATEFROMPARTS(YEAR(invoice_date), MONTH(invoice_date), 1)
-                                                                AS order_month_start,
+        DATEFROMPARTS(YEAR(invoice_date), MONTH(invoice_date), 1) AS order_month_start,
         quantity * unit_price                                   AS revenue,
         country
     FROM  online_retail
@@ -107,14 +106,11 @@ ORDER BY crc.cohort_month, crc.period_index;
 --  Business Question:
 --  "How is the active customer count and total revenue trending
 --   month over month? Are we growing or declining?"
---
---  Uses: LAG() window function for MoM growth calculation
 -- ============================================================
 WITH clean_orders AS (
     SELECT
         customer_id,
         DATEFROMPARTS(YEAR(invoice_date), MONTH(invoice_date), 1) AS order_month,
-        -- [MySQL]: DATE_FORMAT(invoice_date, '%Y-%m-01') AS order_month
         quantity * unit_price                                     AS revenue
     FROM  online_retail
     WHERE customer_id IS NOT NULL
@@ -137,20 +133,14 @@ SELECT
     active_customers,
     total_revenue,
     ROUND(total_revenue / NULLIF(active_customers, 0), 2)           AS revenue_per_customer,
-
     LAG(active_customers) OVER (ORDER BY order_month)               AS prev_month_customers,
-
     ROUND(
         CAST(
-            active_customers
-            - LAG(active_customers) OVER (ORDER BY order_month)
-        AS DECIMAL(10,4))
+            active_customers - LAG(active_customers) OVER (ORDER BY order_month) AS DECIMAL(10,4))
         / NULLIF(LAG(active_customers) OVER (ORDER BY order_month), 0)
-        * 100, 2
-    )                                                               AS mom_customer_growth_pct
+        * 100, 2)                                                               AS mom_customer_growth_pct
 FROM  monthly_summary
 ORDER BY order_month;
-
 
 -- ============================================================
 -- QUERY 3 — NEW vs. RETURNING CUSTOMER SPLIT (MONTHLY)
@@ -163,7 +153,6 @@ WITH clean_orders AS (
     SELECT
         customer_id,
         DATEFROMPARTS(YEAR(invoice_date), MONTH(invoice_date), 1) AS order_month
-        -- [MySQL]: DATE_FORMAT(invoice_date, '%Y-%m-01') AS order_month
     FROM  online_retail
     WHERE customer_id IS NOT NULL
       AND quantity   > 0
@@ -190,13 +179,11 @@ SELECT
     ROUND(
         CAST(SUM(CASE WHEN fo.first_month < mc.order_month
                       THEN 1 ELSE 0 END) AS DECIMAL(10,4))
-        / NULLIF(COUNT(mc.customer_id), 0) * 100, 2
-    )                                                                   AS returning_pct
+        / NULLIF(COUNT(mc.customer_id), 0) * 100, 2)                   AS returning_pct
 FROM  monthly_customers  mc
 JOIN  first_orders        fo  ON mc.customer_id = fo.customer_id
 GROUP BY mc.order_month
 ORDER BY mc.order_month;
-
 
 -- ============================================================
 -- QUERY 4 — CUSTOMER CHURN IDENTIFICATION
@@ -204,11 +191,6 @@ ORDER BY mc.order_month;
 --  Business Question:
 --  "Which customers have gone silent for 90+ days?
 --   Flag them so CRM can trigger a re-engagement campaign."
---
---  T-SQL note:
---  • DATEDIFF(DAY, start, end) — argument order is (unit, start, end)
---    [MySQL]: DATEDIFF(end, start) — argument order is reversed
---  • ISNULL(x, y)  [MySQL]: IFNULL(x, y)
 -- ============================================================
 WITH clean_orders AS (
     SELECT
@@ -232,7 +214,6 @@ SELECT
     co.last_order_date,
     dm.max_date                                             AS dataset_reference_date,
     DATEDIFF(DAY, co.last_order_date, dm.max_date)          AS days_since_last_order,
-    -- [MySQL]: DATEDIFF(dm.max_date, co.last_order_date)
     CASE
         WHEN DATEDIFF(DAY, co.last_order_date, dm.max_date) > 90  THEN 'Churned'
         WHEN DATEDIFF(DAY, co.last_order_date, dm.max_date) > 30  THEN 'At Risk'
@@ -242,21 +223,17 @@ FROM  clean_orders       co
 CROSS JOIN dataset_max_date  dm
 ORDER BY days_since_last_order DESC;
 
-
 -- ============================================================
 -- QUERY 5 — COHORT REVENUE & CUMULATIVE ARPU
 --
 --  Business Question:
 --  "Which acquisition cohorts generate the highest lifetime
 --   revenue per customer (LTV proxy)?"
---
---  Uses: SUM() OVER with UNBOUNDED PRECEDING for running total
 -- ============================================================
 WITH clean_orders AS (
     SELECT
         customer_id,
         DATEFROMPARTS(YEAR(invoice_date), MONTH(invoice_date), 1) AS order_month,
-        -- [MySQL]: DATE_FORMAT(invoice_date, '%Y-%m-01') AS order_month
         quantity * unit_price                                     AS revenue
     FROM  online_retail
     WHERE customer_id IS NOT NULL
@@ -309,21 +286,17 @@ FROM  cohort_revenue  cr
 JOIN  cohort_sizes    cs  ON cr.cohort_month = cs.cohort_month
 ORDER BY cr.cohort_month, cr.period_index;
 
-
 -- ============================================================
 -- QUERY 6 — ROLLING 3-MONTH RETENTION RATE
 --
 --  Business Question:
 --  "Smooth out month-to-month noise — what is the 3-month
 --   rolling average retention rate for each cohort?"
---
---  Uses: AVG() OVER with sliding ROWS BETWEEN frame
 -- ============================================================
 WITH clean_orders AS (
     SELECT
         customer_id,
         DATEFROMPARTS(YEAR(invoice_date), MONTH(invoice_date), 1) AS order_month
-        -- [MySQL]: DATE_FORMAT(invoice_date, '%Y-%m-01') AS order_month
     FROM  online_retail
     WHERE customer_id IS NOT NULL
       AND quantity   > 0
@@ -390,9 +363,6 @@ ORDER BY cohort_month, order_month;
 --  Business Question:
 --  "Which customers drive 80% of revenue? Identify high-value
 --   customers for VIP or loyalty program targeting."
---
---  Uses: NTILE(5) for revenue quintile segmentation,
---        running SUM for cumulative revenue %
 -- ============================================================
 WITH clean_orders AS (
     SELECT
@@ -449,21 +419,17 @@ SELECT
 FROM  revenue_ranked
 ORDER BY total_revenue DESC;
 
-
 -- ============================================================
 -- QUERY 8 — MONTH-OVER-MONTH COHORT CHURN RATE
 --
 --  Business Question:
 --  "For each cohort, what fraction of last month's active
 --   customers did NOT return this month?"
---
---  Uses: LAG() to compare consecutive-period active counts
 -- ============================================================
 WITH clean_orders AS (
     SELECT
         customer_id,
         DATEFROMPARTS(YEAR(invoice_date), MONTH(invoice_date), 1) AS order_month
-        -- [MySQL]: DATE_FORMAT(invoice_date, '%Y-%m-01') AS order_month
     FROM  online_retail
     WHERE customer_id IS NOT NULL
       AND quantity   > 0
@@ -508,25 +474,17 @@ SELECT
 FROM  period_counts
 ORDER BY cohort_month, order_month;
 
-
 -- ============================================================
 -- QUERY 9 — COUNTRY-LEVEL RETENTION COMPARISON
 --
 --  Business Question:
 --  "Do customers from certain countries retain better than
 --   others? Should we localize our retention strategy?"
---
---  T-SQL note: PostgreSQL DISTINCT ON has no T-SQL equivalent.
---  ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...) is the
---  standard cross-dialect approach used here.
---
---  TOP 5  [MySQL]: remove TOP 5, add LIMIT 5 at subquery end
 -- ============================================================
 WITH clean_orders AS (
     SELECT
         customer_id,
         DATEFROMPARTS(YEAR(invoice_date), MONTH(invoice_date), 1) AS order_month,
-        -- [MySQL]: DATE_FORMAT(invoice_date, '%Y-%m-01') AS order_month
         country
     FROM  online_retail
     WHERE customer_id IS NOT NULL
@@ -554,7 +512,7 @@ customer_country AS (
 ),
 
 top_countries AS (
-    SELECT TOP 5 country                -- [MySQL]: remove TOP 5, add LIMIT 5 after ORDER BY
+    SELECT TOP 5 country         
     FROM  customer_country
     GROUP BY country
     ORDER BY COUNT(*) DESC
@@ -607,7 +565,6 @@ WHERE cs.cohort_size >= 10
   AND ma.country IN (SELECT country FROM top_countries)
 ORDER BY ma.country, ma.cohort_month, ma.period_index;
 
-
 -- ============================================================
 -- QUERY 10 — EXECUTIVE COHORT HEALTH SCORECARD
 --
@@ -616,14 +573,13 @@ ORDER BY ma.country, ma.cohort_month, ma.period_index;
 --   size, M1/M3/M6 retention rates, and average LTV —
 --   the single most important output in a retention review."
 --
---  Uses: Conditional aggregation — CASE inside COUNT(DISTINCT)
+--  Uses: Conditional aggregation CASE inside COUNT(DISTINCT)
 --        to pivot period data into a single scorecard row.
 -- ============================================================
 WITH clean_orders AS (
     SELECT
         customer_id,
         DATEFROMPARTS(YEAR(invoice_date), MONTH(invoice_date), 1) AS order_month,
-        -- [MySQL]: DATE_FORMAT(invoice_date, '%Y-%m-01') AS order_month
         quantity * unit_price                                     AS revenue
     FROM  online_retail
     WHERE customer_id IS NOT NULL
