@@ -1,9 +1,7 @@
 
 --  Business Context:
---  An online retail company wants to understand how well it
---  retains customers over time, which acquisition cohorts
---  perform best, and where churn is highest so marketing
---  and CX teams can intervene early.
+--  An online retail company wants to understand how well it retains customers over time, which acquisition cohorts perform best,
+--  and where churn is highest so marketing and CX teams can intervene early.
 --
 -- SETUP: Create & load the table 
 --
