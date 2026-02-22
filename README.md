@@ -29,11 +29,6 @@ BULK INSERT online_retail
 FROM 'C:\data\online_retail_II.csv'
 WITH (FORMAT = 'CSV', FIRSTROW = 2, FIELDTERMINATOR = ',', ROWTERMINATOR = '\n', TABLOCK);
 
--- MySQL 8+
-LOAD DATA INFILE '/data/online_retail_II.csv'
-INTO TABLE online_retail
-FIELDS TERMINATED BY ',' ENCLOSED BY '"'
-LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 ```
 
 ---
@@ -63,7 +58,6 @@ LINES TERMINATED BY '\n' IGNORE 1 ROWS;
 - **Conditional Aggregation** — `CASE WHEN` inside `COUNT/SUM` for pivot-style outputs
 - **Rolling Averages** — `ROWS BETWEEN 2 PRECEDING AND CURRENT ROW`
 - **Cumulative Revenue** — running totals using `ORDER BY` inside window frames
-- **DISTINCT ON** — PostgreSQL-native deduplication for customer-country assignment
 - **CROSS JOIN** — for broadcasting a single reference date across all rows
 - **NULL-safe division** — `NULLIF` to prevent division-by-zero errors
 - **Date truncation & arithmetic** — `DATE_TRUNC`, `EXTRACT` for cohort month math
